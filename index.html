@@ -45,10 +45,10 @@
         </div>
     </header>
 
-    <!-- Summary Cards: Tối ưu bố cục Mobile (Số dư nổi bật trên cùng, Thu/Chi chia 2 cột dưới) -->
+    <!-- Summary Cards: Bố cục Mobile-First -->
     <section class="max-w-7xl mx-auto w-full px-3 sm:px-4 pt-3.5 pb-2">
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
-            <!-- Số dư quỹ (Chiếm trọn hàng ngang trên Mobile để dễ nhìn nhất) -->
+            <!-- Số dư quỹ -->
             <div class="col-span-2 sm:col-span-1 sm:order-3 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-3.5 sm:p-4 rounded-xl shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-[11px] sm:text-xs font-semibold text-blue-100 uppercase tracking-wider">Số Dư Quỹ Hiện Tại</p>
@@ -83,7 +83,7 @@
         </div>
     </section>
 
-    <!-- Admin Action Bar (Chỉ hiện khi đăng nhập Admin) -->
+    <!-- Admin Action Bar (Chỉ hiện sau khi xác thực thành công) -->
     <section id="adminToolbar" class="hidden max-w-7xl mx-auto w-full px-3 sm:px-4 mt-1">
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2">
             <span class="text-xs font-bold text-amber-800 flex items-center gap-1.5">
@@ -103,7 +103,7 @@
         </div>
     </section>
 
-    <!-- Navigation Tabs: Chia đều 2 nửa trên Mobile để dễ bấm bằng ngón cái -->
+    <!-- Navigation Tabs -->
     <section class="max-w-7xl mx-auto w-full px-3 sm:px-4 mt-3">
         <div class="bg-white rounded-t-xl border-b border-slate-200 grid grid-cols-2 sm:flex overflow-hidden">
             <button onclick="switchTab('fund')" id="tabFund" class="py-3 px-2 sm:px-6 text-xs sm:text-sm font-medium text-slate-600 hover:text-emerald-600 tab-active transition text-center flex items-center justify-center gap-1.5">
@@ -120,14 +120,12 @@
         
         <!-- TAB 1: ĐÓNG QUỸ THEO THÁNG -->
         <div id="viewFund" class="bg-white rounded-b-xl shadow-sm border border-t-0 border-slate-200 p-3 sm:p-4">
-            <!-- Thanh công cụ tìm kiếm & Lọc cột tháng cho Mobile -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
                 <div class="flex gap-2 w-full sm:w-auto">
                     <div class="relative flex-1 sm:w-60">
                         <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                         <input type="text" id="searchMember" onkeyup="renderFundTable()" placeholder="Tìm tên thành viên..." class="w-full pl-8 pr-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-500">
                     </div>
-                    <!-- Bộ lọc hiển thị 1 tháng hoặc tất cả tháng (Rất tiện trên Mobile) -->
                     <select id="fundMonthViewFilter" onchange="renderFundTable()" class="text-xs sm:text-sm border border-slate-300 rounded-lg px-2.5 py-2 bg-slate-50 font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
                         <option value="ALL">Tất cả tháng</option>
                     </select>
@@ -158,7 +156,7 @@
                 <p class="text-[11px] sm:text-xs text-slate-500 italic">* Đơn vị: <strong>k VNĐ</strong>. Thu lẻ đã gộp vào bảng Đóng quỹ.</p>
             </div>
 
-            <!-- Tổng kết nhanh cho bộ lọc hiện tại (Hiển thị rõ trên Mobile) -->
+            <!-- Tổng kết nhanh -->
             <div id="matchFilterSummary" class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200 mb-3 text-center">
                 <div>
                     <p class="text-[10px] text-slate-500 uppercase font-semibold">Số trận</p>
@@ -174,10 +172,10 @@
                 </div>
             </div>
 
-            <!-- DẠNG THẺ (CARD LIST) CHO MOBILE (Dưới 768px) - Không cần cuộn ngang -->
+            <!-- Card List cho Mobile -->
             <div id="matchMobileCards" class="md:hidden space-y-2.5"></div>
 
-            <!-- DẠNG BẢNG (TABLE) CHO DESKTOP (Từ 768px trở lên) -->
+            <!-- Table cho Desktop -->
             <div class="hidden md:block overflow-x-auto border border-slate-200 rounded-lg">
                 <table class="w-full text-sm text-left border-collapse">
                     <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
@@ -197,20 +195,20 @@
 
     </main>
 
-    <!-- MODAL: ĐĂNG NHẬP ADMIN -->
+    <!-- MODAL: ĐĂNG NHẬP ADMIN (Xác thực qua Server Apps Script) -->
     <div id="authModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white rounded-t-2xl sm:rounded-xl max-w-sm w-full p-5 sm:p-6 shadow-xl">
             <div class="flex justify-between items-center mb-3">
                 <h3 class="font-bold text-base sm:text-lg text-slate-800"><i class="fa-solid fa-user-shield text-emerald-600 mr-2"></i>Xác thực Admin</h3>
                 <button onclick="toggleAuthModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <p class="text-xs text-slate-500 mb-4">Chỉ Admin mới có quyền chỉnh sửa quỹ, thêm tháng mới, thêm tiền sân và thu lẻ.</p>
+            <p class="text-xs text-slate-500 mb-4">Nhập mật khẩu quản trị đã cấu hình trong Google Apps Script.</p>
             <div class="mb-4">
                 <label class="block text-xs font-semibold text-slate-700 mb-1.5">Mật khẩu Admin</label>
                 <input type="password" id="adminPasswordInput" onkeypress="if(event.key==='Enter') handleAdminLogin()" placeholder="Nhập mật khẩu..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-emerald-600">
                 <p id="authError" class="hidden text-xs text-rose-600 mt-1.5">Mật khẩu không chính xác!</p>
             </div>
-            <button onclick="handleAdminLogin()" class="w-full bg-emerald-600 active:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+            <button id="loginSubmitBtn" onclick="handleAdminLogin()" class="w-full bg-emerald-600 active:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">
                 Đăng nhập
             </button>
         </div>
@@ -289,13 +287,13 @@
 
     <script>
         // =========================================================================
-        // 1. CẤU HÌNH CỦA BẠN (THAY LINK WEB APP & MẬT KHẨU TRƯỚC KHI LƯU)
+        // CHỈ CẦN THAY DUY NHẤT LINK WEB APP URL CỦA BẠN VÀO DÒNG DƯỚI ĐÂY:
         // =========================================================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsNBpUHTWFpTbtoO4pJ6K-IufQsXU7DEWjza0yTSv6qdTAXorNGkCJhTea7z0nYM_e/exec"; 
-        const ADMIN_PASSWORD = "zuize2026"; 
         // =========================================================================
 
         let isAdmin = false;
+        let sessionAdminPassword = "";
         let monthHeaders = [];
         let members = [];
         let matches = [];
@@ -372,13 +370,20 @@
             if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("DÁN_LINK")) return;
             setSyncStatus('loading', 'Đang lưu...');
             try {
-                await fetch(GOOGLE_SCRIPT_URL, {
+                const securePayload = { ...payload, password: sessionAdminPassword };
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(securePayload)
                 });
-                setSyncStatus('success', 'Đã lưu Sheet');
+                const result = await res.json();
+
+                if (result.status === "success") {
+                    setSyncStatus('success', 'Đã lưu Sheet');
+                } else {
+                    setSyncStatus('warn', 'Từ chối ghi dữ liệu');
+                    alert("Lỗi bảo mật: " + (result.message || "Không có quyền thực hiện!"));
+                }
             } catch (err) {
                 setSyncStatus('warn', 'Lỗi lưu Sheet');
                 alert("Có lỗi xảy ra khi đồng bộ với Google Sheet: " + err);
@@ -428,7 +433,6 @@
             }
         }
 
-        // Cập nhật dropdown chọn xem 1 tháng cụ thể hoặc tất cả tháng trong Tab 1
         function updateFundMonthViewDropdown() {
             const select = document.getElementById('fundMonthViewFilter');
             const current = select.value;
@@ -442,7 +446,6 @@
             }
         }
 
-        // --- RENDER BẢNG ĐÓNG QUỸ (Hỗ trợ thu gọn 1 tháng trên Mobile) ---
         function renderFundTable() {
             const query = document.getElementById('searchMember').value.toLowerCase();
             const selectedMonth = document.getElementById('fundMonthViewFilter').value;
@@ -450,7 +453,6 @@
             const tbody = document.getElementById('fundTableBody');
             const tfoot = document.getElementById('fundTableFoot');
 
-            // Lọc danh sách cột tháng hiển thị theo lựa chọn của người dùng
             const visibleHeaders = selectedMonth === 'ALL' 
                 ? monthHeaders 
                 : monthHeaders.filter(h => h.label === selectedMonth);
@@ -478,7 +480,6 @@
                 let rowTotal = 0;
                 const amounts = m.amounts || {};
 
-                // Tổng của thành viên luôn tính trên tất cả các tháng (hoặc theo bộ lọc nếu đang lọc)
                 visibleHeaders.forEach(h => {
                     rowTotal += Number(amounts[h.label]) || 0;
                 });
@@ -570,7 +571,6 @@
             }
         }
 
-        // --- RENDER TAB 2: DẠNG THẺ CHO MOBILE & DẠNG BẢNG CHO DESKTOP ---
         function renderMatchTable() {
             const filter = document.getElementById('monthFilter').value;
             const tbody = document.getElementById('matchTableBody');
@@ -592,7 +592,6 @@
                 sumExp += exp;
                 sumCasual += cas;
 
-                // 1. Render Card cho Mobile
                 mobileContainer.innerHTML += `
                     <div class="bg-slate-50/70 border border-slate-200 rounded-xl p-3 flex flex-col gap-2">
                         <div class="flex items-start justify-between gap-2">
@@ -617,7 +616,6 @@
                     </div>
                 `;
 
-                // 2. Render Table Row cho Desktop
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="py-2.5 px-3 border-r border-slate-200 font-mono text-xs text-slate-600">${match.date}</td>
@@ -629,7 +627,6 @@
                 `;
             });
 
-            // Cập nhật thẻ tổng kết nhỏ phía trên
             document.getElementById('subMatchCount').innerText = filtered.length;
             document.getElementById('subMatchExpense').innerText = formatK(sumExp);
             document.getElementById('subMatchCasual').innerText = formatK(sumCasual);
@@ -651,9 +648,11 @@
             renderMatchTable();
         }
 
+        // --- XÁC THỰC ADMIN QUA SERVER APPS SCRIPT ---
         function toggleAuthModal() {
             if (isAdmin) {
                 isAdmin = false;
+                sessionAdminPassword = "";
                 updateAdminUI();
                 return;
             }
@@ -664,14 +663,40 @@
             if (!modal.classList.contains('hidden')) document.getElementById('adminPasswordInput').focus();
         }
 
-        function handleAdminLogin() {
-            const pwd = document.getElementById('adminPasswordInput').value;
-            if (pwd === ADMIN_PASSWORD) {
-                isAdmin = true;
-                document.getElementById('authModal').classList.add('hidden');
-                updateAdminUI();
-            } else {
-                document.getElementById('authError').classList.remove('hidden');
+        async function handleAdminLogin() {
+            const pwdInput = document.getElementById('adminPasswordInput').value.trim();
+            const errorEl = document.getElementById('authError');
+            const loginBtn = document.getElementById('loginSubmitBtn');
+
+            if (!pwdInput) return;
+
+            errorEl.classList.add('hidden');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang kiểm tra...';
+
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "login", password: pwdInput })
+                });
+                const result = await res.json();
+
+                if (result.status === "success") {
+                    isAdmin = true;
+                    sessionAdminPassword = pwdInput;
+                    document.getElementById('authModal').classList.add('hidden');
+                    updateAdminUI();
+                } else {
+                    errorEl.innerText = "Mật khẩu không chính xác!";
+                    errorEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorEl.innerText = "Lỗi kết nối máy chủ xác thực! Hãy kiểm tra lại link Web App.";
+                errorEl.classList.remove('hidden');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerText = 'Đăng nhập';
             }
         }
 
@@ -695,6 +720,7 @@
             renderAll();
         }
 
+        // --- MODALS & ADMIN ACTIONS ---
         function openAddMonthModal() { document.getElementById('addMonthModal').classList.remove('hidden'); }
         function closeAddMonthModal() { document.getElementById('addMonthModal').classList.add('hidden'); }
 
