@@ -334,7 +334,7 @@
 
         // --- GHI DỮ LIỆU LÊN GOOGLE SHEET ---
         async function postToGoogleSheet(payload) {
-            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbwsNBpUHTWFpTbtoO4pJ6K-IufQsXU7DEWjza0yTSv6qdTAXorNGkCJhTea7z0nYM_e/exec")) return;
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("DÁN_LINK")) return;
             setSyncStatus('loading', 'Đang lưu lên Sheet...');
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
