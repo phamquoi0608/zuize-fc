@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZuiZe Football Club - Quản Lý Quỹ & Thu Chi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .tab-active { border-bottom: 3px solid #16a34a; color: #16a34a; font-weight: 700; }
+        .sticky-col { position: sticky; left: 0; background-color: inherit; z-index: 10; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-emerald-700 to-green-600 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white text-emerald-700 rounded-full flex items-center justify-center font-black text-xl shadow">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg md:text-xl leading-tight">ZuiZe Football Club</h1>
+                    <p class="text-xs text-emerald-100 flex items-center gap-2">
+                        <span>Hệ thống minh bạch Quỹ & Thu Chi</span>
+                        <span id="syncStatus" class="bg-emerald-800/60 px-2 py-0.5 rounded text-[11px]">
+                            <i class="fa-solid fa-circle-check text-emerald-300"></i> Sẵn sàng
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="fetchFromGoogleSheet()" class="bg-white/15 hover:bg-white/25 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition border border-white/20" title="Tải lại dữ liệu mới nhất từ Google Sheet">
+                    <i class="fa-solid fa-rotate"></i> Làm mới
+                </button>
+                <span id="adminBadge" class="hidden bg-amber-400 text-slate-900 text-xs font-bold px-2.5 py-1 rounded-full items-center gap-1">
+                    <i class="fa-solid fa-shield-halved"></i> Admin
+                </span>
+                <button id="authBtn" onclick="toggleAuthModal()" class="bg-white/20 hover:bg-white/30 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition flex items-center gap-2 border border-white/30">
+                    <i class="fa-solid fa-lock"></i> <span id="authBtnText">Đăng nhập Admin</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <section class="max-w-7xl mx-auto w-full px-4 pt-5 pb-2">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Tổng Thu Quỹ (Đã gồm thu lẻ)</p>
+                    <p id="totalIncomeDisplay" class="text-2xl font-bold text-emerald-600 mt-1">0k</p>
+                </div>
+                <div class="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Tổng Chi (Tiền Sân & Đồ)</p>
+                    <p id="totalExpenseDisplay" class="text-2xl font-bold text-rose-600 mt-1">0k</p>
+                </div>
+                <div class="w-11 h-11 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Số Dư Quỹ Hiện Tại</p>
+                    <p id="balanceDisplay" class="text-2xl font-bold text-blue-600 mt-1">0k</p>
+                </div>
+                <div class="w-11 h-11 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Tabs & Admin Toolbar -->
+    <section class="max-w-7xl mx-auto w-full px-4 mt-3">
+        <div class="bg-white rounded-t-xl border-b border-slate-200 px-4 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex gap-6">
+                <button onclick="switchTab('fund')" id="tabFund" class="py-3.5 text-sm font-medium text-slate-600 hover:text-emerald-600 tab-active transition">
+                    <i class="fa-solid fa-table-cells mr-1.5"></i>Đóng Quỹ Theo Tháng
+                </button>
+                <button onclick="switchTab('matches')" id="tabMatches" class="py-3.5 text-sm font-medium text-slate-600 hover:text-emerald-600 transition">
+                    <i class="fa-solid fa-receipt mr-1.5"></i>Chi Tiết Thu Chi Từng Trận
+                </button>
+            </div>
+
+            <!-- Admin Quick Actions -->
+            <div id="adminToolbar" class="hidden py-2 flex flex-wrap items-center gap-2">
+                <button onclick="openAddMonthModal()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
+                    <i class="fa-solid fa-calendar-plus mr-1"></i> Thêm Tháng Mới
+                </button>
+                <button onclick="openAddMemberModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
+                    <i class="fa-solid fa-user-plus mr-1"></i> Thêm Thành Viên
+                </button>
+                <button onclick="openAddMatchModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
+                    <i class="fa-solid fa-plus mr-1"></i> Nhập Trận Mới
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto w-full px-4 pb-10 flex-1">
+        
+        <!-- TAB 1: ĐÓNG QUỸ THEO THÁNG -->
+        <div id="viewFund" class="bg-white rounded-b-xl shadow-sm border border-t-0 border-slate-200 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchMember" onkeyup="renderFundTable()" placeholder="Tìm tên thành viên / nguồn thu..." class="w-full pl-9 pr-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-500">
+                </div>
+                <p class="text-xs text-slate-500 italic">
+                    * Đơn vị: <strong>nghìn VNĐ (k)</strong>. <span id="adminEditHint" class="hidden text-amber-600 font-semibold">Click trực tiếp vào ô số tiền để sửa & đồng bộ Sheet!</span>
+                </p>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead id="fundTableHead" class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200"></thead>
+                    <tbody id="fundTableBody" class="divide-y divide-slate-200"></tbody>
+                    <tfoot id="fundTableFoot" class="bg-slate-50 font-bold text-slate-800 border-t-2 border-slate-300"></tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: CHI TIẾT THU CHI TỪNG TRẬN -->
+        <div id="viewMatches" class="hidden bg-white rounded-b-xl shadow-sm border border-t-0 border-slate-200 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-semibold text-slate-600">Lọc theo tháng/năm:</label>
+                    <select id="monthFilter" onchange="renderMatchTable()" class="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-500">
+                        <option value="ALL">Tất cả các trận</option>
+                    </select>
+                </div>
+                <p class="text-xs text-slate-500 italic">* Đơn vị: <strong>nghìn VNĐ (k)</strong>. Thu lẻ từng trận đã được tổng hợp vào bảng Đóng quỹ.</p>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="py-2.5 px-3 border-r border-slate-200 w-32">Ngày</th>
+                            <th class="py-2.5 px-3 border-r border-slate-200 min-w-[220px]">Nội dung / Trận đấu</th>
+                            <th class="py-2.5 px-3 border-r border-slate-200 text-right text-rose-700 min-w-[130px]">Tiền Sân / Chi Phí</th>
+                            <th class="py-2.5 px-3 border-r border-slate-200 text-right text-emerald-700 min-w-[130px]">Thu Lẻ Tại Sân</th>
+                            <th class="py-2.5 px-3 min-w-[180px]">Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matchTableBody" class="divide-y divide-slate-200"></tbody>
+                    <tfoot id="matchTableFoot" class="bg-slate-50 font-bold text-slate-800 border-t-2 border-slate-300"></tfoot>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL: ĐĂNG NHẬP ADMIN -->
+    <div id="authModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-800"><i class="fa-solid fa-user-shield text-emerald-600 mr-2"></i>Xác thực Admin</h3>
+                <button onclick="toggleAuthModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Chỉ Admin mới có quyền chỉnh sửa quỹ, thêm tháng mới, thêm tiền sân và thu lẻ.</p>
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Mật khẩu Admin</label>
+                <input type="password" id="adminPasswordInput" onkeypress="if(event.key==='Enter') handleAdminLogin()" placeholder="Nhập mật khẩu..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-600">
+                <p id="authError" class="hidden text-xs text-rose-600 mt-1">Mật khẩu không chính xác!</p>
+            </div>
+            <button onclick="handleAdminLogin()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-sm transition">
+                Đăng nhập
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: THÊM THÁNG MỚI -->
+    <div id="addMonthModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Thêm Cột Tháng Mới</h3>
+                <button onclick="closeAddMonthModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Tên cột tháng (VD: 12/2026 hoặc 01/2027)</label>
+                <input type="text" id="newMonthLabel" placeholder="VD: 01/2027" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-purple-600">
+            </div>
+            <button onclick="addNewMonth()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg text-sm">
+                Tạo Cột & Đồng bộ Sheet
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: THÊM THÀNH VIÊN -->
+    <div id="addMemberModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Thêm Thành Viên / Nguồn Thu</h3>
+                <button onclick="closeAddMemberModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Tên thành viên / Nguồn thu</label>
+                <input type="text" id="newMemberName" placeholder="VD: Nguyễn Văn A" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-600">
+            </div>
+            <button onclick="addNewMember()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-sm">
+                Lưu & Đồng bộ Google Sheet
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: NHẬP TRẬN MỚI -->
+    <div id="addMatchModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Nhập Chi Phí Sân & Thu Lẻ</h3>
+                <button onclick="closeAddMatchModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Ngày đá (dd/mm/yyyy)</label>
+                    <input type="text" id="matchDate" placeholder="VD: 25/11/2026" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nội dung chi / Đối thủ</label>
+                    <input type="text" id="matchDesc" placeholder="VD: Tiền sân + Nước (vs FC Bạn)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-rose-700 mb-1">Tiền Sân / Chi Phí (k VNĐ)</label>
+                        <input type="number" id="matchExpense" value="0" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-700 mb-1">Thu Lẻ Tại Sân (k VNĐ)</label>
+                        <input type="number" id="matchCasualIncome" value="0" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Ghi chú thêm</label>
+                    <input type="text" id="matchNote" placeholder="VD: Đã chuyển khoản sân" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                </div>
+            </div>
+            <button onclick="addNewMatch()" class="w-full mt-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm">
+                Lưu & Đồng bộ Google Sheet
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. CẤU HÌNH CỦA BẠN (THAY LINK WEB APP & MẬT KHẨU TRƯỚC KHI LƯU)
+        // =========================================================================
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsNBpUHTWFpTbtoO4pJ6K-IufQsXU7DEWjza0yTSv6qdTAXorNGkCJhTea7z0nYM_e/exec"; 
+        const ADMIN_PASSWORD = "zuize2026"; 
+        // =========================================================================
+
+        let isAdmin = false;
+        let monthHeaders = [];
+        let members = [];
+        let matches = [];
+
+        // Chuẩn hóa mọi định dạng ngày (kể cả chuỗi "Fri Jul 17 2026 00:00:00...") về dd/mm/yyyy
+        function normalizeDate(raw) {
+            if (!raw) return "";
+            const str = raw.toString().trim();
+
+            // 1. Dạng dd/mm/yyyy hoặc d-m-yyyy
+            const dmy = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+            if (dmy) {
+                return `${dmy[1].padStart(2, '0')}/${dmy[2].padStart(2, '0')}/${dmy[3]}`;
+            }
+
+            // 2. Dạng ISO yyyy-mm-dd
+            const iso = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+            if (iso) {
+                return `${iso[3].padStart(2, '0')}/${iso[2].padStart(2, '0')}/${iso[1]}`;
+            }
+
+            // 3. Dạng JS Date string ("Fri Jul 17 2026 00:00:00 GMT+0700...")
+            const parsed = new Date(str);
+            if (!isNaN(parsed.getTime()) && str.length > 8) {
+                const dd = String(parsed.getDate()).padStart(2, '0');
+                const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+                const yyyy = parsed.getFullYear();
+                return `${dd}/${mm}/${yyyy}`;
+            }
+
+            return str;
+        }
+
+        function extractMonthYear(dateStr) {
+            const norm = normalizeDate(dateStr);
+            const parts = norm.split('/');
+            if (parts.length === 3) {
+                return `${parts[1]}/${parts[2]}`;
+            }
+            return "";
+        }
+
+        function setSyncStatus(type, text) {
+            const el = document.getElementById('syncStatus');
+            if (type === 'loading') el.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-amber-300"></i> ${text}`;
+            else if (type === 'success') el.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-300"></i> ${text}`;
+            else el.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-300"></i> ${text}`;
+        }
+
+        async function fetchFromGoogleSheet() {
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("DÁN_LINK")) {
+                setSyncStatus('warn', 'Chưa gắn link Sheet');
+                return;
+            }
+            setSyncStatus('loading', 'Đang tải từ Sheet...');
+            try {
+                const url = GOOGLE_SCRIPT_URL + (GOOGLE_SCRIPT_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    monthHeaders = data.monthHeaders || [];
+                    members = data.members || [];
+                    
+                    // Xử lý thông minh tab Chi tiết (tự nhận diện nếu cột Ngày & Nội dung bị đảo chỗ)
+                    matches = (data.matches || [])
+                        .filter(m => {
+                            const d1 = (m.date || "").toString().toLowerCase();
+                            const d2 = (m.desc || "").toString().toLowerCase();
+                            return !d1.includes("nội dung") && !d2.includes("nội dung") && !d1.includes("ngày") && !d2.includes("ngày");
+                        })
+                        .map(m => {
+                            let realDate = m.date;
+                            let realDesc = m.desc;
+                            // Nếu m.desc chứa định dạng ngày (VD: "Fri Jul 17 2026...") còn m.date là chữ ("Tiền sân") -> đảo lại cho đúng
+                            if (m.desc && (m.desc.includes("GMT") || /^\d{1,4}[-\/]\d{1,2}[-\/]\d{1,4}/.test(m.desc))) {
+                                realDate = m.desc;
+                                realDesc = m.date;
+                            }
+                            return {
+                                ...m,
+                                date: normalizeDate(realDate),
+                                desc: realDesc
+                            };
+                        });
+                    
+                    setSyncStatus('success', 'Đã đồng bộ Google Sheet');
+                    renderAll();
+                }
+            } catch (err) {
+                console.error(err);
+                setSyncStatus('warn', 'Lỗi tải dữ liệu Sheet');
+            }
+        }
+
+        async function postToGoogleSheet(payload) {
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("DÁN_LINK")) return;
+            setSyncStatus('loading', 'Đang lưu lên Sheet...');
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                setSyncStatus('success', 'Đã lưu vào Google Sheet');
+            } catch (err) {
+                setSyncStatus('warn', 'Lỗi khi ghi lên Sheet');
+                alert("Có lỗi xảy ra khi đồng bộ với Google Sheet: " + err);
+            }
+        }
+
+        function formatK(num) {
+            return Number(num || 0).toLocaleString('en-US') + 'k';
+        }
+
+        function updateDashboard() {
+            let totalFundIncome = 0;
+            members.forEach(m => {
+                monthHeaders.forEach(h => {
+                    totalFundIncome += Number((m.amounts && m.amounts[h.label]) || 0);
+                });
+            });
+
+            let totalExpense = 0;
+            matches.forEach(match => {
+                totalExpense += Math.abs(Number(match.expense) || 0);
+            });
+
+            const balance = totalFundIncome - totalExpense;
+
+            document.getElementById('totalIncomeDisplay').innerText = formatK(totalFundIncome);
+            document.getElementById('totalExpenseDisplay').innerText = formatK(totalExpense);
+            
+            const balEl = document.getElementById('balanceDisplay');
+            balEl.innerText = formatK(balance);
+            balEl.className = `text-2xl font-bold mt-1 ${balance >= 0 ? 'text-blue-600' : 'text-rose-600'}`;
+        }
+
+        function switchTab(tab) {
+            const viewFund = document.getElementById('viewFund');
+            const viewMatches = document.getElementById('viewMatches');
+            const tabFund = document.getElementById('tabFund');
+            const tabMatches = document.getElementById('tabMatches');
+
+            if (tab === 'fund') {
+                viewFund.classList.remove('hidden');
+                viewMatches.classList.add('hidden');
+                tabFund.classList.add('tab-active');
+                tabMatches.classList.remove('tab-active');
+            } else {
+                viewFund.classList.add('hidden');
+                viewMatches.classList.remove('hidden');
+                tabFund.classList.remove('tab-active');
+                tabMatches.classList.add('tab-active');
+            }
+        }
+
+        function renderFundTable() {
+            const query = document.getElementById('searchMember').value.toLowerCase();
+            const thead = document.getElementById('fundTableHead');
+            const tbody = document.getElementById('fundTableBody');
+            const tfoot = document.getElementById('fundTableFoot');
+
+            let monthHeadersHtml = monthHeaders.map(h => 
+                `<th class="py-2.5 px-3 border-r border-slate-200 text-right min-w-[95px] whitespace-nowrap">${h.label}</th>`
+            ).join('');
+
+            thead.innerHTML = `
+                <tr>
+                    <th class="py-2.5 px-3 border-r border-slate-200 w-10 text-center">#</th>
+                    <th class="py-2.5 px-3 border-r border-slate-200 sticky-col bg-slate-100 min-w-[180px]">Thành viên / Nguồn thu</th>
+                    ${monthHeadersHtml}
+                    <th class="py-2.5 px-3 text-right bg-emerald-50 text-emerald-800 min-w-[110px] whitespace-nowrap">Tổng cộng</th>
+                </tr>
+            `;
+
+            tbody.innerHTML = '';
+            let colSums = {};
+            monthHeaders.forEach(h => colSums[h.label] = 0);
+
+            const filtered = members.filter(m => m.name.toLowerCase().includes(query));
+
+            filtered.forEach((m, index) => {
+                let rowTotal = 0;
+                const amounts = m.amounts || {};
+
+                let monthCells = monthHeaders.map(h => {
+                    const val = Number(amounts[h.label]) || 0;
+                    rowTotal += val;
+                    colSums[h.label] += val;
+
+                    const bgClass = val > 0 ? 'text-slate-800' : 'text-slate-300';
+                    if (isAdmin) {
+                        return `<td class="py-2 px-3 border-r border-slate-200 text-right cursor-pointer hover:bg-amber-50 ${bgClass}" onclick="editFundCell(${m.id}, '${h.label}', ${h.colIndex})">${val > 0 ? val : '-'}</td>`;
+                    }
+                    return `<td class="py-2 px-3 border-r border-slate-200 text-right ${bgClass}">${val > 0 ? val : '-'}</td>`;
+                }).join('');
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2 px-3 border-r border-slate-200 text-center text-slate-400 text-xs">${index + 1}</td>
+                        <td class="py-2 px-3 border-r border-slate-200 font-medium text-slate-800 sticky-col bg-white">${m.name}</td>
+                        ${monthCells}
+                        <td class="py-2 px-3 text-right font-bold text-emerald-700 bg-emerald-50/40">${formatK(rowTotal)}</td>
+                    </tr>
+                `;
+            });
+
+            let grandSum = 0;
+            let footCells = monthHeaders.map(h => {
+                const s = colSums[h.label] || 0;
+                grandSum += s;
+                return `<td class="py-2.5 px-3 border-r border-slate-200 text-right whitespace-nowrap">${formatK(s)}</td>`;
+            }).join('');
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="2" class="py-2.5 px-3 border-r border-slate-200 sticky-col bg-slate-50">TỔNG THU QUỸ THÁNG</td>
+                    ${footCells}
+                    <td class="py-2.5 px-3 text-right text-emerald-700 bg-emerald-100 whitespace-nowrap">${formatK(grandSum)}</td>
+                </tr>
+            `;
+        }
+
+        function editFundCell(memberId, monthLabel, colIndex) {
+            if (!isAdmin) return;
+            const member = members.find(m => m.id === memberId);
+            if (!member) return;
+            if (!member.amounts) member.amounts = {};
+
+            const currentVal = member.amounts[monthLabel] || 0;
+            const newVal = prompt(`Nhập số tiền đóng quỹ (${monthLabel}, đơn vị: k VNĐ) cho "${member.name}":`, currentVal);
+            
+            if (newVal !== null && !isNaN(newVal) && newVal.trim() !== '') {
+                const amount = Number(newVal);
+                member.amounts[monthLabel] = amount;
+                renderAll();
+
+                postToGoogleSheet({
+                    action: "updateFund",
+                    memberName: member.name,
+                    colIndex: colIndex,
+                    amount: amount
+                });
+            }
+        }
+
+        function updateMatchMonthFilter() {
+            const select = document.getElementById('monthFilter');
+            const currentVal = select.value;
+            const uniqueMonths = new Set();
+
+            matches.forEach(m => {
+                const my = extractMonthYear(m.date);
+                if (my) uniqueMonths.add(my);
+            });
+
+            const sortedMonths = Array.from(uniqueMonths).sort((a, b) => {
+                const [mA, yA] = a.split('/').map(Number);
+                const [mB, yB] = b.split('/').map(Number);
+                return (yA - yB) || (mA - mB);
+            });
+
+            let html = `<option value="ALL">Tất cả các trận (${matches.length} trận)</option>`;
+            sortedMonths.forEach(my => {
+                html += `<option value="${my}">Tháng ${my}</option>`;
+            });
+            select.innerHTML = html;
+
+            if (sortedMonths.includes(currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
+        function renderMatchTable() {
+            const filter = document.getElementById('monthFilter').value;
+            const tbody = document.getElementById('matchTableBody');
+            const tfoot = document.getElementById('matchTableFoot');
+            tbody.innerHTML = '';
+
+            let sumExp = 0, sumCasual = 0;
+            const filtered = matches.filter(m => {
+                if (filter === 'ALL') return true;
+                return extractMonthYear(m.date) === filter;
+            });
+
+            filtered.forEach(match => {
+                const exp = Math.abs(Number(match.expense) || 0);
+                const cas = Math.abs(Number(match.casualIncome) || 0);
+                sumExp += exp;
+                sumCasual += cas;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2 px-3 border-r border-slate-200 font-mono text-xs text-slate-600">${match.date}</td>
+                        <td class="py-2 px-3 border-r border-slate-200 font-medium text-slate-800">${match.desc}</td>
+                        <td class="py-2 px-3 border-r border-slate-200 text-right text-rose-600 font-semibold">${exp > 0 ? formatK(exp) : '-'}</td>
+                        <td class="py-2 px-3 border-r border-slate-200 text-right text-emerald-600 font-semibold">${cas > 0 ? formatK(cas) : '-'}</td>
+                        <td class="py-2 px-3 text-xs text-slate-500">${match.note || ''}</td>
+                    </tr>
+                `;
+            });
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="2" class="py-2.5 px-3 border-r border-slate-200">TỔNG CỘNG (${filtered.length} TRẬN)</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-right text-rose-700">${formatK(sumExp)}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-right text-emerald-700">${formatK(sumCasual)}</td>
+                    <td></td>
+                </tr>
+            `;
+        }
+
+        function renderAll() {
+            updateDashboard();
+            renderFundTable();
+            updateMatchMonthFilter();
+            renderMatchTable();
+        }
+
+        function toggleAuthModal() {
+            if (isAdmin) {
+                isAdmin = false;
+                updateAdminUI();
+                return;
+            }
+            const modal = document.getElementById('authModal');
+            modal.classList.toggle('hidden');
+            document.getElementById('authError').classList.add('hidden');
+            document.getElementById('adminPasswordInput').value = '';
+            if (!modal.classList.contains('hidden')) document.getElementById('adminPasswordInput').focus();
+        }
+
+        function handleAdminLogin() {
+            const pwd = document.getElementById('adminPasswordInput').value;
+            if (pwd === ADMIN_PASSWORD) {
+                isAdmin = true;
+                document.getElementById('authModal').classList.add('hidden');
+                updateAdminUI();
+            } else {
+                document.getElementById('authError').classList.remove('hidden');
+            }
+        }
+
+        function updateAdminUI() {
+            const badge = document.getElementById('adminBadge');
+            const authBtnText = document.getElementById('authBtnText');
+            const toolbar = document.getElementById('adminToolbar');
+            const hint = document.getElementById('adminEditHint');
+
+            if (isAdmin) {
+                badge.classList.remove('hidden');
+                badge.classList.add('inline-flex');
+                authBtnText.innerText = 'Thoát Admin';
+                toolbar.classList.remove('hidden');
+                hint.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('inline-flex');
+                authBtnText.innerText = 'Đăng nhập Admin';
+                toolbar.classList.add('hidden');
+                hint.classList.add('hidden');
+            }
+            renderAll();
+        }
+
+        function openAddMonthModal() { document.getElementById('addMonthModal').classList.remove('hidden'); }
+        function closeAddMonthModal() { document.getElementById('addMonthModal').classList.add('hidden'); }
+
+        function addNewMonth() {
+            const label = document.getElementById('newMonthLabel').value.trim();
+            if (!label) return alert('Vui lòng nhập tên cột tháng (VD: 01/2027)!');
+            if (monthHeaders.some(h => h.label === label)) return alert('Tháng này đã tồn tại trong bảng!');
+
+            const nextColIndex = monthHeaders.length > 0 ? Math.max(...monthHeaders.map(h => h.colIndex)) + 1 : 2;
+            monthHeaders.push({ colIndex: nextColIndex, label: label });
+            document.getElementById('newMonthLabel').value = '';
+            closeAddMonthModal();
+            renderAll();
+
+            postToGoogleSheet({ action: "addMonth", monthLabel: label });
+        }
+
+        function openAddMemberModal() { document.getElementById('addMemberModal').classList.remove('hidden'); }
+        function closeAddMemberModal() { document.getElementById('addMemberModal').classList.add('hidden'); }
+
+        function addNewMember() {
+            const name = document.getElementById('newMemberName').value.trim();
+            if (!name) return alert('Vui lòng nhập tên thành viên / nguồn thu!');
+            members.push({ id: Date.now(), name, amounts: {} });
+            document.getElementById('newMemberName').value = '';
+            closeAddMemberModal();
+            renderAll();
+
+            postToGoogleSheet({ action: "addMember", name: name });
+        }
+
+        function openAddMatchModal() { document.getElementById('addMatchModal').classList.remove('hidden'); }
+        function closeAddMatchModal() { document.getElementById('addMatchModal').classList.add('hidden'); }
+
+        function addNewMatch() {
+            const rawDate = document.getElementById('matchDate').value.trim();
+            const desc = document.getElementById('matchDesc').value.trim();
+            const expense = Math.abs(Number(document.getElementById('matchExpense').value)) || 0;
+            const casualIncome = Math.abs(Number(document.getElementById('matchCasualIncome').value)) || 0;
+            const note = document.getElementById('matchNote').value.trim();
+
+            if (!rawDate || !desc) return alert('Vui lòng nhập Ngày và Nội dung trận đấu!');
+            const date = normalizeDate(rawDate);
+
+            matches.push({ id: Date.now(), date, desc, expense, casualIncome, note });
+
+            document.getElementById('matchDate').value = '';
+            document.getElementById('matchDesc').value = '';
+            document.getElementById('matchExpense').value = '0';
+            document.getElementById('matchCasualIncome').value = '0';
+            document.getElementById('matchNote').value = '';
+
+            closeAddMatchModal();
+            renderAll();
+
+            postToGoogleSheet({
+                action: "addMatch",
+                date, desc, expense, casualIncome, note
+            });
+        }
+
+        fetchFromGoogleSheet();
+    </script>
+</body>
+</html>
