@@ -263,11 +263,52 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsNBpUHTWFpTbtoO4pJ6K-IufQsXU7DEWjza0yTSv6qdTAXorNGkCJhTea7z0nYM_e/exec"; 
         // =========================================================================
 
-        let isAdmin = false;
         let monthHeaders = [];
         let members = [];
         let matches = [];
+        // XÓA BỎ BIẾN ADMIN_PASSWORD CỨNG TRONG CODE!
+        let isAdmin = false;
+        let sessionAdminPassword = ""; // Chỉ lưu tạm trong bộ nhớ phiên làm việc khi bạn tự nhập
 
+        // Hàm đăng nhập: Gửi mật khẩu lên Google Apps Script để xác thực
+        async function handleAdminLogin() {
+            const pwdInput = document.getElementById('adminPasswordInput').value;
+            const errorEl = document.getElementById('authError');
+            const loginBtn = document.querySelector('#authModal button[onclick="handleAdminLogin()"]');
+        
+            if (!pwdInput) return;
+        
+            errorEl.classList.add('hidden');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang kiểm tra...';
+        
+            try {
+                // Dùng text/plain để tránh preflight CORS của Google Apps Script và đọc được JSON phản hồi
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "login", password: pwdInput })
+                });
+                const result = await res.json();
+        
+                if (result.status === "success") {
+                    isAdmin = true;
+                    sessionAdminPassword = pwdInput; // Lưu tạm cho phiên làm việc hiện tại
+                    document.getElementById('authModal').classList.add('hidden');
+                    updateAdminUI();
+                } else {
+                    errorEl.innerText = "Mật khẩu không chính xác!";
+                    errorEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorEl.innerText = "Lỗi kết nối máy chủ xác thực!";
+                errorEl.classList.remove('hidden');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerText = 'Đăng nhập';
+            }
+        }
+        
         // Chuẩn hóa mọi định dạng ngày (kể cả chuỗi "Fri Jul 17 2026 00:00:00...") về dd/mm/yyyy
         function normalizeDate(raw) {
             if (!raw) return "";
@@ -358,19 +399,27 @@
             }
         }
 
+        // Cập nhật hàm gửi dữ liệu: Tự động đính kèm password đã xác thực vào mọi lệnh ghi
         async function postToGoogleSheet(payload) {
             if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("DÁN_LINK")) return;
-            setSyncStatus('loading', 'Đang lưu lên Sheet...');
+            setSyncStatus('loading', 'Đang lưu...');
             try {
-                await fetch(GOOGLE_SCRIPT_URL, {
+                const securePayload = { ...payload, password: sessionAdminPassword };
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(securePayload)
                 });
-                setSyncStatus('success', 'Đã lưu vào Google Sheet');
+                const result = await res.json();
+        
+                if (result.status === "success") {
+                    setSyncStatus('success', 'Đã lưu Sheet');
+                } else {
+                    setSyncStatus('warn', 'Từ chối ghi dữ liệu');
+                    alert("Lỗi bảo mật: " + (result.message || "Không có quyền thực hiện!"));
+                }
             } catch (err) {
-                setSyncStatus('warn', 'Lỗi khi ghi lên Sheet');
+                setSyncStatus('warn', 'Lỗi lưu Sheet');
                 alert("Có lỗi xảy ra khi đồng bộ với Google Sheet: " + err);
             }
         }
